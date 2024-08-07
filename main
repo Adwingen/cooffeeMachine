@@ -1,0 +1,86 @@
+from data import MENU, profit, resources
+
+def prompt_message():
+    """ Validate the user input and return the choice """
+    choice = input("What would you like? espresso[$1.5] latte[$2.5] cappuccino[$3.0]: ").lower()
+    while choice not in ["espresso", "latte", "cappuccino", "off", "report"]:
+        print("Please enter a valid input")
+        choice = input("What would you like? espresso[$1.5] latte[$2.5] cappuccino[$3.0]: ").lower()
+    return choice
+
+def output_choice(choice_user):
+    """ Return the output choice """
+    if choice_user == "off":
+        print("The coffee machine is shutting down")
+        return False
+    elif choice_user == "report":
+        for resource, amount in resources.items():
+            print(f"{resource.capitalize()}: {amount}")
+        print(f"Money: ${profit:.2f}")
+    else:
+        if check_resources(choice_user):
+            if process_coins(choice_user):
+                make_coffee(choice_user)
+    return True
+
+def check_resources(choice_user_drink):
+    """ Check if the resources are sufficient """
+    drink = MENU[choice_user_drink]
+    for ingredient, required_amount in drink['ingredients'].items():
+        if resources.get(ingredient, 0) < required_amount:
+            print(f"Sorry, there is not enough {ingredient}")
+            return False
+    return True
+
+def validate_if_is_digit(input_coins):
+    """ Validate if the coin is a valid input """
+    if not input_coins.isdigit() or int(input_coins) < 0:
+        print("Please enter a valid digit")
+        return False
+    return True
+
+def get_coin_input(prompt):
+    """ Prompt user for coin input and validate """
+    while True:
+        coin_input = input(prompt)
+        if validate_if_is_digit(coin_input):
+            return int(coin_input)
+
+def process_coins(choice_user_drink):
+    """ Process the coins inserted by the user """
+    print("Please insert coins")
+    quarters = get_coin_input("How many quarters?: ")
+    dimes = get_coin_input("How many dimes?: ")
+    nickles = get_coin_input("How many nickles?: ")
+    pennies = get_coin_input("How many pennies?: ")
+
+    total = quarters * 0.25 + dimes * 0.1 + nickles * 0.05 + pennies * 0.01
+    drink_cost = MENU[choice_user_drink]["cost"]
+
+    if total < drink_cost:
+        print(f"Sorry, that's not enough money. ${total:.2f} returned")
+        return False
+    elif total > drink_cost:
+        change = total - drink_cost
+        print(f"Here is ${change:.2f} in change")
+    return True
+
+
+def make_coffee(drink_input):
+    """ Deduct the required ingredients from the resources and make the coffee """
+    for ingredient, required_amount in MENU[drink_input]['ingredients'].items():
+        resources[ingredient] -= required_amount
+    global profit
+    profit += MENU[drink_input]['cost']
+    print(f"Here is your {drink_input}. Enjoy! ☕ ")
+
+
+while True:
+    user_choice = prompt_message()
+    if not output_choice(user_choice):
+        break
+
+# Print final resources and profit for verification
+for resource, amount in resources.items():
+    print(f"{resource.capitalize()}: {amount}")
+print(f"Money: ${profit:.2f}")
